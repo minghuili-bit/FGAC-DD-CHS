@@ -28,11 +28,10 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-.globl embedded_pairing_core_arch_x86_64_cpu_supports_bmi2_adx
-.type embedded_pairing_core_arch_x86_64_cpu_supports_bmi2_adx, @function
+.globl _embedded_pairing_core_arch_x86_64_cpu_supports_bmi2_adx
 .text
 
-embedded_pairing_core_arch_x86_64_cpu_supports_bmi2_adx:
+_embedded_pairing_core_arch_x86_64_cpu_supports_bmi2_adx:
     push %rbx
 
     movl $0x07, %eax
@@ -55,8 +54,7 @@ embedded_pairing_core_arch_x86_64_cpu_supports_bmi2_adx:
     pop %rbx
     ret
 
-.globl embedded_pairing_core_arch_x86_64_bmi2_adx_bigint_768_multiply
-.type embedded_pairing_core_arch_x86_64_bmi2_adx_bigint_768_multiply, @function
+.globl _embedded_pairing_core_arch_x86_64_bmi2_adx_bigint_768_multiply
 .text
 
 # Input carry and output carry are in rdx. Extra "+1" bit stored in carry flag.
@@ -92,7 +90,7 @@ embedded_pairing_core_arch_x86_64_cpu_supports_bmi2_adx:
     # At this point, the carry and overflow flags are both 0
 .endm
 
-embedded_pairing_core_arch_x86_64_bmi2_adx_bigint_768_multiply:
+_embedded_pairing_core_arch_x86_64_bmi2_adx_bigint_768_multiply:
     push %rbx
     push %r12
     push %r13
@@ -141,8 +139,7 @@ embedded_pairing_core_arch_x86_64_bmi2_adx_bigint_768_multiply:
     pop %rbx
     ret
 
-.globl embedded_pairing_core_arch_x86_64_bmi2_adx_bigint_768_square
-.type embedded_pairing_core_arch_x86_64_bmi2_adx_bigint_768_square, @function
+.globl _embedded_pairing_core_arch_x86_64_bmi2_adx_bigint_768_square
 .text
 
 .macro doubleadddiagonal_bmi2_adx tosquare, todoublelo, todoublehi, storelo, storehi
@@ -158,7 +155,7 @@ embedded_pairing_core_arch_x86_64_bmi2_adx_bigint_768_multiply:
 
 # rdi is a pointer to the destination BigInt<768>. rsi is a pointer to
 # the operand (which is a BigInt<384>).
-embedded_pairing_core_arch_x86_64_bmi2_adx_bigint_768_square:
+_embedded_pairing_core_arch_x86_64_bmi2_adx_bigint_768_square:
     push %rbp
     push %rbx
     push %r12
@@ -233,8 +230,7 @@ embedded_pairing_core_arch_x86_64_bmi2_adx_bigint_768_square:
     pop %rbp
     ret
 
-.globl embedded_pairing_core_arch_x86_64_bmi2_adx_fpbase_384_montgomery_reduce
-.type embedded_pairing_core_arch_x86_64_bmi2_adx_fpbase_384_montgomery_reduce, @function
+.globl _embedded_pairing_core_arch_x86_64_bmi2_adx_fpbase_384_montgomery_reduce
 .text
 
 # The constant u used in multiplications for this iteration should be in rdx
@@ -270,7 +266,7 @@ embedded_pairing_core_arch_x86_64_bmi2_adx_bigint_768_square:
 
 # Result is stored in rdi, product is in rsi, prime modulus is in rdx, and
 # inv_word is in rcx.
-embedded_pairing_core_arch_x86_64_bmi2_adx_fpbase_384_montgomery_reduce:
+_embedded_pairing_core_arch_x86_64_bmi2_adx_fpbase_384_montgomery_reduce:
     push %rbp
     push %rbx
     push %r12

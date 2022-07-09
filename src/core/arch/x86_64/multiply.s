@@ -172,9 +172,9 @@ _embedded_pairing_core_arch_x86_64_bigint_768_square:
 
     # Iteration i = 4 (word 56(%rdi) in rcx, word 64(%rdi) in rbp)
     movq 32(%rsi), %r9
-    muladd64 %r9 (%rsi), %r13
-    muladdcarry64 %r9 8(%rsi), %r14, %r8
-    muladdcarry64 %r9 16(%rsi), %r15, %r8
+    muladd64 %r9, (%rsi), %r13
+    muladdcarry64 %r9, 8(%rsi), %r14, %r8
+    muladdcarry64 %r9, 16(%rsi), %r15, %r8
     mulcarry64 %r9, 24(%rsi), %rcx, %r8
     movq %rdx, %rbp
 
