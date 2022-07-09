@@ -33,8 +33,8 @@
 # larger 128-bit return values). The registers rbx, rbp, and r12-r15 must be
 # saved and restored by a function if it modifies them.
 
-.globl embedded_pairing_core_arch_x86_64_bigint_384_add
-.type embedded_pairing_core_arch_x86_64_bigint_384_add, @function
+.globl _embedded_pairing_core_arch_x86_64_bigint_384_add
+
 .text
 
 .macro addcarry64 offset
@@ -43,7 +43,7 @@
     movq %rax, \offset(%rdi)
 .endm
 
-embedded_pairing_core_arch_x86_64_bigint_384_add:
+_embedded_pairing_core_arch_x86_64_bigint_384_add:
     movq (%rsi), %rax
     add (%rdx), %rax
     movq %rax, (%rdi)
@@ -58,8 +58,7 @@ embedded_pairing_core_arch_x86_64_bigint_384_add:
     adc %rax, %rax
     ret
 
-.globl embedded_pairing_core_arch_x86_64_bigint_384_subtract
-.type embedded_pairing_core_arch_x86_64_bigint_384_subtract, @function
+.globl _embedded_pairing_core_arch_x86_64_bigint_384_subtract
 .text
 
 .macro subborrow64 offset
@@ -68,7 +67,7 @@ embedded_pairing_core_arch_x86_64_bigint_384_add:
     movq %rax, \offset(%rdi)
 .endm
 
-embedded_pairing_core_arch_x86_64_bigint_384_subtract:
+_embedded_pairing_core_arch_x86_64_bigint_384_subtract:
     movq (%rsi), %rax
     sub (%rdx), %rax
     movq %rax, (%rdi)
@@ -83,8 +82,7 @@ embedded_pairing_core_arch_x86_64_bigint_384_subtract:
     neg %rax
     ret
 
-.globl embedded_pairing_core_arch_x86_64_bigint_384_multiply2
-.type embedded_pairing_core_arch_x86_64_bigint_384_multiply2, @function
+.globl _embedded_pairing_core_arch_x86_64_bigint_384_multiply2
 .text
 
 .macro mul2carry64 offset
@@ -93,7 +91,7 @@ embedded_pairing_core_arch_x86_64_bigint_384_subtract:
     movq %rax, \offset(%rdi)
 .endm
 
-embedded_pairing_core_arch_x86_64_bigint_384_multiply2:
+_embedded_pairing_core_arch_x86_64_bigint_384_multiply2:
     movq (%rsi), %rax
     add %rax, %rax
     movq %rax, (%rdi)
@@ -108,14 +106,13 @@ embedded_pairing_core_arch_x86_64_bigint_384_multiply2:
     adc %rax, %rax
     ret
 
-.globl embedded_pairing_core_arch_x86_64_fpbase_384_multiply2
-.type embedded_pairing_core_arch_x86_64_fpbase_384_multiply2, @function
+.globl _embedded_pairing_core_arch_x86_64_fpbase_384_multiply2
 .text
 
 # Destination pointer is in rdi
 # Operand 1 pointer is in rsi
 # Modulus pointer is in rdx
-embedded_pairing_core_arch_x86_64_fpbase_384_multiply2:
+_embedded_pairing_core_arch_x86_64_fpbase_384_multiply2:
     push %rbx
 
     # Materialize sum in [rax, rbx, rcx, r8, r9, rsi] (little endian)
@@ -185,15 +182,14 @@ embedded_pairing_core_arch_x86_64_fpbase_384_multiply2_final_return:
     ret
 
 
-.globl embedded_pairing_core_arch_x86_64_fpbase_384_add
-.type embedded_pairing_core_arch_x86_64_fpbase_384_add, @function
+.globl _embedded_pairing_core_arch_x86_64_fpbase_384_add
 .text
 
 # Destination pointer is in rdi
 # Operand 1 pointer is in rsi
 # Operand 2 pointer is in rdx
 # Modulus pointer is in rcx
-embedded_pairing_core_arch_x86_64_fpbase_384_add:
+_embedded_pairing_core_arch_x86_64_fpbase_384_add:
     push %rbx
     push %rbp
 
@@ -266,15 +262,14 @@ embedded_pairing_core_arch_x86_64_fpbase_384_add_final_return:
     pop %rbx
     ret
 
-.globl embedded_pairing_core_arch_x86_64_fpbase_384_subtract
-.type embedded_pairing_core_arch_x86_64_fpbase_384_subtract, @function
+.globl _embedded_pairing_core_arch_x86_64_fpbase_384_subtract
 .text
 
 # Destination pointer is in rdi
 # Operand 1 pointer is in rsi
 # Operand 2 pointer is in rdx
 # Modulus pointer is in rcx
-embedded_pairing_core_arch_x86_64_fpbase_384_subtract:
+_embedded_pairing_core_arch_x86_64_fpbase_384_subtract:
     push %rbx
     push %rbp
 

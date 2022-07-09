@@ -33,8 +33,7 @@
 # larger 128-bit return values). The registers rbx, rbp, and r12-r15 must be
 # saved and restored by a function if it modifies them.
 
-.globl embedded_pairing_core_arch_x86_64_bigint_768_multiply
-.type embedded_pairing_core_arch_x86_64_bigint_768_multiply, @function
+.globl _embedded_pairing_core_arch_x86_64_bigint_768_multiply
 .text
 
 # Input carry and output carry are in rdx.
@@ -75,7 +74,7 @@
     muladdcarry64 %r9, 40(%rcx), \dst5, \dst0
 .endm
 
-embedded_pairing_core_arch_x86_64_bigint_768_multiply:
+_embedded_pairing_core_arch_x86_64_bigint_768_multiply:
     push %r12
     push %r13
     push %r14
@@ -127,8 +126,7 @@ embedded_pairing_core_arch_x86_64_bigint_768_multiply:
     pop %r12
     ret
 
-.globl embedded_pairing_core_arch_x86_64_bigint_768_square
-.type embedded_pairing_core_arch_x86_64_bigint_768_square, @function
+.globl _embedded_pairing_core_arch_x86_64_bigint_768_square
 .text
 
 .macro adddiagonal tosquare, addlo, addhi
@@ -145,7 +143,7 @@ embedded_pairing_core_arch_x86_64_bigint_768_multiply:
 
 # rdi is a pointer to the destination BigInt<768>. rsi is a pointer to the
 # operand (which is a BigInt<384>).
-embedded_pairing_core_arch_x86_64_bigint_768_square:
+_embedded_pairing_core_arch_x86_64_bigint_768_square:
     push %rbp
     push %rbx
     push %r12
@@ -243,8 +241,7 @@ embedded_pairing_core_arch_x86_64_bigint_768_square:
     pop %rbp
     ret
 
-.globl embedded_pairing_core_arch_x86_64_fpbase_384_montgomery_reduce
-.type embedded_pairing_core_arch_x86_64_fpbase_384_montgomery_reduce, @function
+.globl _embedded_pairing_core_arch_x86_64_fpbase_384_montgomery_reduce
 .text
 
 # The constant u used in multiplications for this iteration should be in r9.
@@ -279,7 +276,7 @@ embedded_pairing_core_arch_x86_64_bigint_768_square:
     adc $0, %rbx
 .endm
 
-embedded_pairing_core_arch_x86_64_fpbase_384_montgomery_reduce:
+_embedded_pairing_core_arch_x86_64_fpbase_384_montgomery_reduce:
     push %rbp
     push %rbx
     push %r12
