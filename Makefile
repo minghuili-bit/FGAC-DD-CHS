@@ -1,24 +1,24 @@
-# CXX = g++
-# CXXFLAGS = -std=c++17 -I./include -Ofast
-# AR = ar
-# AS = as
-# ASFLAGS =
+ CXX = g++
+ CXXFLAGS = -std=c++17 -I./include -Ofast
+ AR = ar
+ AS = as
+ ASFLAGS =
 
-CXX = clang++
-CXXFLAGS = -std=c++17 -I./include -Ofast -fno-vectorize
-AR = ar
-AS = as
-ASFLAGS =
+#CXX = clang++
+#CXXFLAGS = -std=c++17 -I./include -Ofast -fno-vectorize
+#AR = ar
+#AS = as
+#ASFLAGS =
 
 # Detect if on a recent version of Ubuntu with clang++, and add -fPIC if so
-ifeq ($(CXX),clang++)
-	ifeq ($(shell lsb_release -i | cut -f 2),Ubuntu)
-		UBUNTU_YEAR = $(shell lsb_release -r | cut -f 2 | cut -d '.' -f 1)
-		ifeq ($(shell expr $(UBUNTU_YEAR) \>= 17),1)
-			CXXFLAGS += -fPIC
-		endif
-	endif
-endif
+#ifeq ($(CXX),clang++)
+#	ifeq ($(shell lsb_release -i | cut -f 2),Ubuntu)
+#		UBUNTU_YEAR = $(shell lsb_release -r | cut -f 2 | cut -d '.' -f 1)
+#		ifeq ($(shell expr $(UBUNTU_YEAR) \>= 17),1)
+#			CXXFLAGS += -fPIC
+#		endif
+#	endif
+#endif
 
 # Try to autodetect the target architecture and set ARCHDIR accordingly
 ARCH = $(shell uname -m)
