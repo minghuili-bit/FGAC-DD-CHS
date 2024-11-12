@@ -7,7 +7,7 @@
 
 CXX = clang++
 CXXFLAGS = -std=c++17 -I../include -Ofast -fno-vectorize
-LDFLAGS = -Wl,--gc-sections
+LDFLAGS = -Wl
 AR = ar
 AS = as
 ASFLAGS =

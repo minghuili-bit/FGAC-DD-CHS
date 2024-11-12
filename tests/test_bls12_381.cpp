@@ -1,13 +1,13 @@
 #include <stdio.h>
 #include <string.h>
-#include "bls12_381/fr.hpp"
-#include "bls12_381/fq.hpp"
-#include "bls12_381/fq2.hpp"
-#include "bls12_381/fq6.hpp"
-#include "bls12_381/fq12.hpp"
-#include "bls12_381/curve.hpp"
-#include "bls12_381/pairing.hpp"
-#include "bls12_381/wnaf.hpp"
+#include "../include/bls12_381/fr.hpp"
+#include "../include/bls12_381/fq.hpp"
+#include "../include/bls12_381/fq2.hpp"
+#include "../include/bls12_381/fq6.hpp"
+#include "../include/bls12_381/fq12.hpp"
+#include "../include/bls12_381/curve.hpp"
+#include "../include/bls12_381/pairing.hpp"
+#include "../include/bls12_381/wnaf.hpp"
 
 using namespace embedded_pairing::bls12_381;
 using embedded_pairing::core::BigInt;

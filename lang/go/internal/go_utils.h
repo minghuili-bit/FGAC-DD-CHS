@@ -35,7 +35,7 @@
 
 #include <stddef.h>
 
-void go_random_bytes(void* buffer, size_t length);
-void go_hash_fill(void* buffer, size_t bufferLength, const void* toHash, size_t toHashLength);
+static void go_random_bytes(void* buffer, size_t length);
+static void go_hash_fill(void* buffer, size_t bufferLength, const void* toHash, size_t toHashLength);
 
 #endif

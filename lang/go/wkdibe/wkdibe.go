@@ -45,13 +45,14 @@ package wkdibe
 import "C"
 
 import (
+	"jedi-pairing/internal"
 	"math/big"
 	"runtime"
 	"sort"
 	"unsafe"
 
 	"github.com/ucbrise/jedi-pairing/lang/go/cryptutils"
-	"github.com/ucbrise/jedi-pairing/lang/go/internal"
+	//"github.com/ucbrise/jedi-pairing/lang/go/internal"
 )
 
 // Params represents public parameters for a WKD-IBE system.

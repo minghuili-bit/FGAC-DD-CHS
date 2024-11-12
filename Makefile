@@ -1,14 +1,14 @@
- CXX = g++
- CXXFLAGS = -std=c++17 -I./include -Ofast
- AR = ar
- AS = as
- ASFLAGS =
+# CXX = g++
+# CXXFLAGS = -std=c++17 -I./include -Ofast
+# AR = ar
+# AS = as
+# ASFLAGS =
 
-#CXX = clang++
-#CXXFLAGS = -std=c++17 -I./include -Ofast -fno-vectorize
-#AR = ar
-#AS = as
-#ASFLAGS =
+CXX = clang++
+CXXFLAGS = -std=c++17 -I./include -Ofast -fno-vectorize
+AR = ar
+AS = as
+ASFLAGS =
 
 # Detect if on a recent version of Ubuntu with clang++, and add -fPIC if so
 #ifeq ($(CXX),clang++)

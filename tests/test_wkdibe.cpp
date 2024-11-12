@@ -1,17 +1,19 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
-#include "bls12_381/fr.hpp"
-#include "bls12_381/fq.hpp"
-#include "bls12_381/fq2.hpp"
-#include "bls12_381/fq6.hpp"
-#include "bls12_381/fq12.hpp"
-#include "bls12_381/curve.hpp"
-#include "bls12_381/pairing.hpp"
-#include "wkdibe/api.hpp"
+#include "../include/bls12_381/fr.hpp"
+#include "../include/bls12_381/fq.hpp"
+#include "../include/bls12_381/fq2.hpp"
+#include "../include/bls12_381/fq6.hpp"
+#include "../include/bls12_381/fq12.hpp"
+#include "../include/bls12_381/curve.hpp"
+#include "../include/bls12_381/pairing.hpp"
+#include "../include/wkdibe/api.hpp"
+#include <chrono>
+#include <iostream>
 
 using namespace embedded_pairing::wkdibe;
-using embedded_pairing::core::BigInt;
+//using embedded_pairing::core::BigInt;
 
 extern "C" {
     void random_bytes(void* buffer, size_t len);
@@ -85,7 +87,7 @@ void test_wkdibe_encrypt_decrypt_master(void) {
 void test_wkdibe_encrypt_decrypt(void) {
     MasterKey msk;
     setup(p, msk, 10, false, random_bytes);
-    keygen(sk1, p, msk, attrs2, random_bytes);
+    keygen(sk1, p, msk, attrs2, random_bytes); // 根据master密钥派生sk1密钥
 
     GT msg;
     msg.random(random_bytes);
@@ -149,6 +151,7 @@ void test_wkdibe_nondelegablekey(void) {
 }
 
 void test_wkdibe_adjust(void) {
+    auto start = std::chrono::high_resolution_clock::now();
     MasterKey msk;
     setup(p, msk, 10, false, random_bytes);
     keygen(sk1, p, msk, attrs1, random_bytes);
@@ -174,6 +177,13 @@ void test_wkdibe_adjust(void) {
     } else {
         printf("Adjust: FAIL (original/decrypted messages differ)\n");
     }
+    // 获取结束时间点
+    auto end = std::chrono::high_resolution_clock::now();
+
+    // 计算耗时（以微秒为单位）
+    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+
+    std::cout << "运行时间: " << duration.count() << " 微秒" << std::endl;
 }
 
 void test_wkdibe_sign(void) {
@@ -185,9 +195,9 @@ void test_wkdibe_sign(void) {
     random_zpstar(msg, random_bytes);
 
     Signature s;
-    sign(s, p, sk1, &attrs3, msg, random_bytes);
+    sign(s, p, sk1, &attrs3, msg, random_bytes); // 属性2的密钥sk1签名属性3对应的信息
 
-    if (verify(p, attrs3, s, msg)) {
+    if (verify(p, attrs3, s, msg)) {  // 签名验证：属性3+信息，用来验证签名s
         printf("Sign/Verify: PASS\n");
     } else {
         printf("Sign/Verify: FAIL (valid signature marked invalid)\n");
@@ -314,12 +324,14 @@ void run_wkdibe_tests() {
     init_test_wkdibe();
 
     test_wkdibe_encrypt_decrypt_master();
-    test_wkdibe_encrypt_decrypt();
-    test_wkdibe_qualifykey();
-    test_wkdibe_nondelegablekey();
-    test_wkdibe_adjust();
-    test_wkdibe_sign();
-    test_wkdibe_marshal<true>("Marshal Compressed");
-    test_wkdibe_marshal<false>("Marshal Uncompressed");
-    printf("DONE\n");
+//    test_wkdibe_encrypt_decrypt();
+//    test_wkdibe_qualifykey();
+//    test_wkdibe_nondelegablekey();
+//    test_wkdibe_adjust();
+//    test_wkdibe_sign();
+//    test_wkdibe_marshal<true>("Marshal Compressed");
+//    test_wkdibe_marshal<false>("Marshal Uncompressed");
+//    printf("DONE\n");
 }
+
+

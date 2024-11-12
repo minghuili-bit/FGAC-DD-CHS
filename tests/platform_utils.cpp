@@ -1,7 +1,7 @@
 #include <stdint.h>
 #include <unistd.h>
 #include <sys/syscall.h>
-
+#include <stdlib.h>
 #include <time.h>
 
 extern "C" {
@@ -9,8 +9,11 @@ extern "C" {
     uint64_t current_time_nanos(void);
 }
 
+//void random_bytes(void* buffer, size_t len) {
+//    syscall(SYS_getrandom, buffer, len, 0);
+//}
 void random_bytes(void* buffer, size_t len) {
-    syscall(SYS_getrandom, buffer, len, 0);
+    arc4random_buf(buffer, len);
 }
 
 uint64_t current_time_nanos(void) {
