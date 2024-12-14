@@ -213,7 +213,11 @@ namespace embedded_pairing::wkdibe {
     };
 
     struct MasterKey {
-        G1 g2alpha[4];
+        G1 g2alpha;
+
+        G1 g2alpha1[4];
+
+        std::vector<std::pair<int, int>> points; // 存储生成的点 (x_i, alpha_i)
 
         template <bool compressed>
         void marshal(void* buffer) const;
@@ -256,8 +260,7 @@ namespace embedded_pairing::wkdibe {
         gt.random_gt(s, bls12_381::generator_pairing, get_random_bytes);
     }
 
-    void setup(Params &params, MasterKey &msk, int l, bool signatures, void (*get_random_bytes)(void *, size_t),
-               std::__1::vector<pair < int, int>>;
+    void setup(Params &params, MasterKey &msk, int l, bool signatures, void (*get_random_bytes)(void *, size_t));
     void keygen(SecretKey& sk, const Params& params, const MasterKey& msk, const AttributeList& attrs, void (*get_random_bytes)(void*, size_t));
     void qualifykey(SecretKey& qualified, const Params& params, const SecretKey& sk, const AttributeList& attrs, void (*get_random_bytes)(void*, size_t));
     void nondelegable_keygen(SecretKey& sk, const Params& params, const MasterKey& msk, const AttributeList& attrs);

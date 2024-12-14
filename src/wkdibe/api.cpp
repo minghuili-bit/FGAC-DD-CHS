@@ -248,6 +248,7 @@ namespace embedded_pairing::wkdibe {
         params.g1.multiply_frobenius(params.g, alphax);
         params.g2.random_generator(get_random_bytes);
 
+        std::cout << "Value of alpha: " << static_cast<int>(alpha) << std::endl;
 
         // Vector to store the points
         vector<pair<int, int> > points(4);
@@ -261,18 +262,15 @@ namespace embedded_pairing::wkdibe {
         for (int i = 0; i < 4; ++i) {
             cout << points[i].first << " "
                  << points[i].second << endl;
+            msk.points.push_back(points[i]);
         }
-
-//        定义一个数组，存储计算后的秘密值
-//        int msk_part = new int[4];
 
         for (int i = 0; i < 4; i++) {
             auto secret = Scalar{.std_words = {(uint32_t)points[i].second}};
             std::cout << "Value of alpha: " << static_cast<int>(secret) << std::endl;
-            msk.g2alpha[i].multiply(params.g2, secret);
+            msk.g2alpha1[i].multiply(params.g2, secret);
         }
-
-
+        
         params.g3.random_generator(get_random_bytes);
 
         G1Affine g2affine;
