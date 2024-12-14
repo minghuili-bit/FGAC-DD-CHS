@@ -212,7 +212,7 @@ namespace embedded_pairing::wkdibe {
     };
 
     struct MasterKey {
-        G1 g2alpha;
+        G1 g2alpha[4];
 
         template <bool compressed>
         void marshal(void* buffer) const;

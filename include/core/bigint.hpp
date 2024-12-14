@@ -86,6 +86,10 @@ namespace embedded_pairing::core {
         static const BigInt<bits> zero;
         static const BigInt<bits> one;
 
+        explicit operator int() const {
+            return static_cast<int>(*std_words);
+        }
+
         void clear(void) {
             memset(this, 0x00, sizeof(BigInt<bits>));
         }
