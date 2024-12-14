@@ -274,7 +274,7 @@ void test_Scalar_threshold(void) {
 
 void test_wkdibe_encrypt_decrypt(void) {
     MasterKey msk;
-    setup(p, msk, 10, false, random_bytes);
+    setup(p, msk, 10, false, random_bytes, 0);
     // msk拆分成阈值(n, t)-threshold
 //    int n = 3;
 //    int t = 2;
