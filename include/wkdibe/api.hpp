@@ -35,6 +35,7 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include <vector>
 
 #include "core/bigint.hpp"
 #include "bls12_381/fr.hpp"
@@ -255,7 +256,8 @@ namespace embedded_pairing::wkdibe {
         gt.random_gt(s, bls12_381::generator_pairing, get_random_bytes);
     }
 
-    void setup(Params& params, MasterKey& msk, int l, bool signatures, void (*get_random_bytes)(void*, size_t));
+    void setup(Params &params, MasterKey &msk, int l, bool signatures, void (*get_random_bytes)(void *, size_t),
+               std::__1::vector<pair < int, int>>;
     void keygen(SecretKey& sk, const Params& params, const MasterKey& msk, const AttributeList& attrs, void (*get_random_bytes)(void*, size_t));
     void qualifykey(SecretKey& qualified, const Params& params, const SecretKey& sk, const AttributeList& attrs, void (*get_random_bytes)(void*, size_t));
     void nondelegable_keygen(SecretKey& sk, const Params& params, const MasterKey& msk, const AttributeList& attrs);

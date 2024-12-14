@@ -243,6 +243,9 @@ namespace embedded_pairing::wkdibe {
         bls12_381::PowersOfX alphax;
         Scalar alpha;
         random_zpstar(alphax, alpha, get_random_bytes); // 使用alphax函数生成一个随机的标量alpha
+
+        std::cout << "Value of original alpha: " << static_cast<int>(alpha) << std::endl;
+
         params.g.random_generator(get_random_bytes);  // 生成一个随机基数g
         params.g1.multiply_frobenius(params.g, alphax);
         params.g2.random_generator(get_random_bytes);
@@ -267,8 +270,8 @@ namespace embedded_pairing::wkdibe {
 
         for (int i = 0; i < 4; i++) {
             auto secret = Scalar{.std_words = {(uint32_t)points[i].second}};
-            std::cout << "Value of alpha: " << static_cast<int>(secret) << std::endl;
-            msk.g2alpha[i].multiply(params.g2, secret);
+            std::cout << "Value of alpha_i: " << static_cast<int>(secret) << std::endl;
+            msk.g2alpha1[i].multiply(params.g2, secret);
         }
 
 
