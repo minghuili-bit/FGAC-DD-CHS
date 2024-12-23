@@ -515,6 +515,8 @@ namespace embedded_pairing::core {
         void random(void (*get_random_bytes)(void*, size_t)) {
             get_random_bytes(this->bytes, byte_length);
         }
+
+
     };
 
     template <int bits>
