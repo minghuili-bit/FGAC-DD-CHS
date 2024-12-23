@@ -259,10 +259,13 @@ namespace embedded_pairing::wkdibe {
         cout << "Secret is divided to " << 4
              << " Parts - " << endl;
 
+        msk.points.resize(4);
+
         for (int i = 0; i < 4; ++i) {
+            msk.points[i].first = points[i].first;
+            msk.points[i].second = points[i].second;
             cout << points[i].first << " "
                  << points[i].second << endl;
-            msk.points.push_back(points[i]);
         }
 
         for (int i = 0; i < 4; i++) {
@@ -270,7 +273,8 @@ namespace embedded_pairing::wkdibe {
             std::cout << "Value of alpha: " << static_cast<int>(secret) << std::endl;
             msk.g2alpha1[i].multiply(params.g2, secret);
         }
-        
+
+
         params.g3.random_generator(get_random_bytes);
 
         G1Affine g2affine;
@@ -289,6 +293,40 @@ namespace embedded_pairing::wkdibe {
         for (int i = 0; i != l; i++) {
             params.h[i].random_generator(get_random_bytes);
         }
+    }
+
+    void keygen1(SecretKey& sk, const Params& params, const G1& msk, const AttributeList& attrs, void (*get_random_bytes)(void*, size_t)) {
+        bls12_381::PowersOfX rx;
+        Scalar r;
+        G1 temp;
+        random_zpstar(rx, r, get_random_bytes);
+        sk.a0.copy(params.g3);
+        int j = 0; /* Index for writing to qualified.b */
+        int k = 0; /* Index for reading from attrs.attrs */
+        for (int i = 0; i != params.l; i++) {
+            if (k != attrs.length && attrs.attrs[k].idx == i) {
+                if (!attrs.attrs[k].omitFromKeys) {
+                    temp.multiply(params.h[i], attrs.attrs[k].id);
+                    sk.a0.add(sk.a0, temp);
+                }
+                k++;
+            } else if (!attrs.omitAllFromKeysUnlessPresent) {
+                sk.b[j].idx = i;
+                sk.b[j].hexp.multiply(params.h[i], r);
+                j++;
+            }
+        }
+        sk.l = j;
+        sk.signatures = params.signatures;
+        if (sk.signatures) {
+            sk.bsig.multiply(params.hsig, r);
+        } else {
+            sk.bsig.copy(G1::zero);
+        }
+        sk.a0.multiply(sk.a0, r);
+
+        sk.a0.add(sk.a0, msk);
+        sk.a1.multiply_frobenius(params.g, rx);
     }
 
     void keygen(SecretKey& sk, const Params& params, const MasterKey& msk, const AttributeList& attrs, void (*get_random_bytes)(void*, size_t)) {
@@ -320,7 +358,8 @@ namespace embedded_pairing::wkdibe {
             sk.bsig.copy(G1::zero);
         }
         sk.a0.multiply(sk.a0, r);
-        sk.a0.add(sk.a0, msk.g2alpha);
+
+        sk.a0.add(sk.a0, msk.g2alpha1[1]);
         sk.a1.multiply_frobenius(params.g, rx);
     }
 
