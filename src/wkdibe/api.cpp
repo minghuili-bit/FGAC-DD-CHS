@@ -46,9 +46,6 @@ using namespace std;
 
 namespace embedded_pairing::wkdibe {
 
-    // Function to calculate the value
-// of y
-// y = poly[0] + x*poly[1] + x^2*poly[2] + ...
     int calculate_Y(int x, vector<int>& poly)
     {
         // Initializing y
@@ -65,213 +62,58 @@ namespace embedded_pairing::wkdibe {
         return y;
     }
 
-// Function to perform the secret
-// sharing algorithm and encode the
-// given secret
-    void secret_sharing(int S, vector<pair<int, int> >& points,
-                        int N, int K)
-    {
-        // A vector to store the polynomial
-        // coefficient of K-1 degree
+    void secret_sharing(int S, int N, int K, std::vector<Scalar>& shares)
+{
+
         vector<int> poly(K);
-
-        // Randomly choose K - 1 numbers but
-        // not zero and poly[0] is the secret
-        // create polynomial for this
-
         poly[0] = S;
 
         for (int j = 1; j < K; ++j) {
             int p = 0;
             while (p == 0)
-
-                // To keep the random values
-                // in range not too high
-                // we are taking mod with a
-                // prime number around 1000
                 p = (rand() % 997);
-
-            // This is to ensure we did not
-            // create a polynomial consisting
-            // of zeroes.
             poly[j] = p;
         }
 
-        // Generating N points from the
-        // polynomial we created
+        // Generate N y-values of the polynomial at x = 1, 2, ..., N
         for (int j = 1; j <= N; ++j) {
-            int x = j;
-            int y = calculate_Y(x, poly);
-
-            // Points created on sharing
-            points[j - 1] = { x, y };
-        }
+            int y = calculate_Y(j, poly);
+            Scalar s;
+            s.std_words[0] = static_cast<uint32_t>(y);
+            for (size_t i = 1; i < sizeof(s.std_words)/sizeof(uint32_t); ++i)
+            s.std_words[i] = 0;
+            shares[j - 1] = s;
+}
     }
 
-// This structure is used for fraction
-// part handling multiplication
-// and addition of fractiontion
-    struct fraction {
-        int num, den;
 
-        // A fraction consists of a
-        // numerator and a denominator
-        fraction(int n, int d)
-        {
-            num = n, den = d;
-        }
-
-        // If the fraction is not
-        // in its reduced form
-        // reduce it by dividing
-        // them with their GCD
-        int gcd(int a, int b) {
-            return b == 0 ? a : gcd(b, a % b);
-        }
-
-        void reduce_fraction(fraction& f) {
-            int gcd_val = gcd(f.num, f.den);
-            f.num /= gcd_val;
-            f.den /= gcd_val;
-        }
-
-        // Performing multiplication on the
-        // fraction
-        fraction operator*(fraction f)
-        {
-            fraction temp(num * f.num, den * f.den);
-            reduce_fraction(temp);
-            return temp;
-        }
-
-        // Performing addition on the
-        // fraction
-        fraction operator+(fraction f)
-        {
-            fraction temp(num * f.den + den * f.num,
-                          den * f.den);
-
-            reduce_fraction(temp);
-            return temp;
-        }
-    };
-
-// Function to generate the secret
-// back from the given points
-// This function will use Lagrange Basis Polynomial
-// Instead of finding the complete Polynomial
-// We only required the poly[0] as our secret code,
-// thus we can get rid of x terms
-    int Generate_Secret(int x[], int y[], int M)
-    {
-
-        fraction ans(0, 1);
-
-        // Loop to iterate through the given
-        // points
-        for (int i = 0; i < M; ++i) {
-
-            // Initializing the fraction
-            fraction l(y[i], 1);
-            for (int j = 0; j < M; ++j) {
-
-                // Computing the lagrange terms
-                if (i != j) {
-                    fraction temp(-x[j], x[i] - x[j]);
-                    l = l * temp;
-                }
-            }
-            ans = ans + l;
-        }
-
-        // Return the secret
-        return ans.num;
-    }
-
-// Function to encode and decode the
-// given secret by using the above
-// defined functions
-    void operation(int S, int N, int K)
-    {
-
-        // Vector to store the points
-        vector<pair<int, int> > points(N);
-
-        // Sharing of secret Code in N parts
-        secret_sharing(S, points, N, K);
-
-        cout << "Secret is divided to " << N
-             << " Parts - " << endl;
-
-        for (int i = 0; i < N; ++i) {
-            cout << points[i].first << " "
-                 << points[i].second << endl;
-        }
-
-        cout << "We can generate Secret from any of "
-             << K << " Parts" << endl;
-
-        // Input any M points from these
-        // to get back our secret code.
-        int M = K;
-
-        // M can be greater than or equal to threshold but
-        // for this example we are taking for threshold
-        if (M < K) {
-            cout << "Points are less than threshold "
-                 << K << " Points Required" << endl;
-        }
-
-        int* x = new int[M];
-        int* y = new int[M];
-
-        // Input M points you will get the secret
-        // Let these points are first M points from
-        // the N points which we shared above
-        // We can take any M points
-
-        for (int i = 0; i < M; ++i) {
-            x[i] = points[i].first;
-            y[i] = points[i].second;
-        }
-
-        // Get back our result again.
-        cout << "Our Secret Code is : "
-             << Generate_Secret(x, y, M) << endl;
-    }
-
-    void setup(Params& params, MasterKey& msk, int l, bool signatures, void (*get_random_bytes)(void*, size_t)) {
+    void threshold_setup(Params& params, MasterKey& msk, int l, bool signatures, void (*get_random_bytes)(void*, size_t), int totalShares, int threshold) {
         bls12_381::PowersOfX alphax;
+        // Sample random scalar alpha in Z_p
         Scalar alpha;
-        random_zpstar(alphax, alpha, get_random_bytes); // 使用alphax函数生成一个随机的标量alpha
-        params.g.random_generator(get_random_bytes);  // 生成一个随机基数g
+        random_zpstar(alphax, alpha, get_random_bytes);
+        params.g.random_generator(get_random_bytes);
         params.g1.multiply_frobenius(params.g, alphax);
+        // Initialize group generator g2
         params.g2.random_generator(get_random_bytes);
 
         std::cout << "Value of alpha: " << static_cast<int>(alpha) << std::endl;
 
-        // Vector to store the points
-        vector<pair<int, int> > points(4);
+        // Split alpha via Shamir sharing into shares
+        std::vector<Scalar> shares(totalShares);
+        secret_sharing(static_cast<int>(alpha), totalShares, threshold, shares);
 
-        // Sharing of secret Code in N parts
-        secret_sharing(static_cast<int>(alpha), points, 4, 2);
-
-        cout << "Secret is divided to " << 4
+        cout << "Secret is divided to " << totalShares
              << " Parts - " << endl;
 
-        msk.points.resize(4);
-
-        for (int i = 0; i < 4; ++i) {
-            msk.points[i].first = points[i].first;
-            msk.points[i].second = points[i].second;
-            cout << points[i].first << " "
-                 << points[i].second << endl;
-        }
-
-        for (int i = 0; i < 4; i++) {
-            auto secret = Scalar{.std_words = {(uint32_t)points[i].second}};
-            std::cout << "Value of alpha: " << static_cast<int>(secret) << std::endl;
-            msk.g2alpha1[i].multiply(params.g2, secret);
+        msk.g2AlphaShares.resize(totalShares);
+        // Compute and store g_2^shares[i]
+        for (int i = 0; i < totalShares; i++) {
+//            auto mark = Scalar{.std_words = {(uint32_t)shares[i].first}};
+//            auto secret = Scalar{.std_words = {(uint32_t)shares[i]}};
+//            std::cout << "Value of i: " << static_cast<int>(mark) << std::endl;
+            std::cout << "Value of alpha: " << static_cast<int>(shares[i]) << std::endl;
+            msk.g2AlphaShares[i].multiply(params.g2, shares[i]);
         }
 
 
@@ -295,14 +137,11 @@ namespace embedded_pairing::wkdibe {
         }
     }
 
-    void keygen1(SecretKey& sk, const Params& params, const G1& msk, const AttributeList& attrs, void (*get_random_bytes)(void*, size_t)) {
-        bls12_381::PowersOfX rx;
-        Scalar r;
+    void calculatePatternToKey(SecretKey& sk, const Params& params, const AttributeList& attrs,
+                              Scalar r, int& out_j) {
         G1 temp;
-        random_zpstar(rx, r, get_random_bytes);
-        sk.a0.copy(params.g3);
-        int j = 0; /* Index for writing to qualified.b */
-        int k = 0; /* Index for reading from attrs.attrs */
+        int j = 0, k = 0;
+
         for (int i = 0; i != params.l; i++) {
             if (k != attrs.length && attrs.attrs[k].idx == i) {
                 if (!attrs.attrs[k].omitFromKeys) {
@@ -316,17 +155,170 @@ namespace embedded_pairing::wkdibe {
                 j++;
             }
         }
-        sk.l = j;
-        sk.signatures = params.signatures;
-        if (sk.signatures) {
-            sk.bsig.multiply(params.hsig, r);
-        } else {
-            sk.bsig.copy(G1::zero);
-        }
-        sk.a0.multiply(sk.a0, r);
 
-        sk.a0.add(sk.a0, msk);
-        sk.a1.multiply_frobenius(params.g, rx);
+        sk.l = j;
+        out_j = j;  // Optional: return j if needed by caller
+    }
+
+    int gcd(int a, int b) {
+        while (b != 0) {
+            int temp = b;
+            b = a % b;
+            a = temp;
+        }
+        return a;
+    }
+
+    int computeLagrangeCoefficient(int i, const std::vector<int>& indices, int K) {
+        int numerator = 1;   // Numerator of the Lagrange coefficient
+        int denominator = 1; // Denominator of the Lagrange coefficient
+
+        // We only need to consider the first K points, not the whole indices array
+        for (size_t j = 0; j < K; ++j) {
+            if (i != j) {
+                numerator *= indices[j];                  // Multiply by x_j for the numerator
+                denominator *= (indices[j] - indices[i]); // Multiply by (x_j - x_i) for the denominator
+
+                // Simplify the fraction
+                int gcd_value = gcd(numerator, denominator);
+                numerator /= gcd_value;
+                denominator /= gcd_value;
+            }
+        }
+
+        // If denominator is not 1, throw an exception (shouldn't happen theoretically)
+        if (denominator != 1) {
+            throw std::runtime_error("Error: Denominator should be 1 after simplification");
+        }
+
+        return numerator;
+    }
+    // Function to compute Lagrange coefficients for threshold shares
+    std::vector<Scalar> computeLagrangeCoefficients(int threshold) {
+        std::vector<int> indices;
+        for (int i = 0; i < threshold; ++i) {
+            indices.push_back(i + 1);  // Add index i+1 to the list
+        }
+
+        std::vector<Scalar> lambdas(threshold);
+        for (size_t i = 0; i < threshold; ++i) {
+            int coeff = computeLagrangeCoefficient(i, indices, threshold);  // Compute Lagrange coefficient for each index
+            Scalar scalar;
+            scalar.std_words[0] = coeff;
+            lambdas[i] = scalar;
+//            std::cout << "L_" << (i + 1) << "(0) = " << lambdas[i] << std::endl;  // Optional debug output
+        }
+
+        return lambdas;
+    }
+
+    void delegate_key_derive(SecretKey& derivedPartialKey, const Params& params, const G1& g2AlphaShares, const AttributeList& attrs, void (*get_random_bytes)(void*, size_t)) {
+        bls12_381::PowersOfX rx;
+        Scalar r;
+        G1 temp;
+        random_zpstar(rx, r, get_random_bytes);
+        // 打印
+
+        derivedPartialKey.a0.copy(params.g3);
+        int j = 0;
+        calculatePatternToKey(derivedPartialKey, params, attrs, r, j);
+        derivedPartialKey.l = j;
+        derivedPartialKey.signatures = params.signatures;
+        if (derivedPartialKey.signatures) {
+            derivedPartialKey.bsig.multiply(params.hsig, r);
+        } else {
+            derivedPartialKey.bsig.copy(G1::zero);
+        }
+        derivedPartialKey.a0.multiply(derivedPartialKey.a0, r);
+
+        derivedPartialKey.a0.add(derivedPartialKey.a0, g2AlphaShares);
+        derivedPartialKey.a1.multiply_frobenius(params.g, rx);
+    }
+
+//    传入参数：
+//    传出参数：
+//    reconstructKey(reconstructed_key, p, derivedPartialKeys, threshold, attrs2, random_bytes);
+
+    void reconstruct_key(SecretKey& reconstructedKey, const Params& params, const std::vector<SecretKey>& derivedPartialKeys, int threshold, const AttributeList& attrs, void (*get_random_bytes)(void*, size_t)) {
+
+        reconstructedKey.a0.copy(G1::zero);
+
+        // Calculate the Lagrange coefficients for interpolation
+        std::vector<Scalar> lambdas = computeLagrangeCoefficients(threshold);
+
+        // Use Lagrange interpolation to recover a0
+        for (int i = 0; i < threshold; ++i) {
+
+            G1 temp;
+//            Scalar scalar;
+//            scalar.std_words[0] = lambdas[i];
+            temp.multiply(derivedPartialKeys[i].a0, lambdas[i]); // temp = λ_i * partial_a0s[i]
+            reconstructedKey.a0.add(reconstructedKey.a0, temp);
+        }
+
+        reconstructedKey.a1 = derivedPartialKeys[0].a1;
+        reconstructedKey.l = derivedPartialKeys[0].l;
+        reconstructedKey.signatures = derivedPartialKeys[0].signatures;
+        reconstructedKey.bsig = derivedPartialKeys[0].bsig;
+        reconstructedKey.b = derivedPartialKeys[0].b;
+
+
+    }
+
+//    void setup(Params& params, MasterKey& msk, int l, bool signatures, void (*get_random_bytes)(void*, size_t)) {
+//        bls12_381::PowersOfX alphax;
+//        Scalar alpha;
+//        random_zpstar(alphax, alpha, get_random_bytes);
+//        params.g.random_generator(get_random_bytes);
+//        params.g1.multiply_frobenius(params.g, alphax);
+//        params.g2.random_generator(get_random_bytes);
+//        msk.g2alpha.multiply(params.g2, alpha);
+//        params.g3.random_generator(get_random_bytes);
+//
+//        G1Affine g2affine;
+//        G2Affine g1affine;
+//        g2affine.from_projective(params.g2);
+//        g1affine.from_projective(params.g1);
+//        bls12_381::pairing(params.pairing, g2affine, g1affine);
+//
+//        params.l = l;
+//        params.signatures = signatures;
+//        if (signatures) {
+//            params.hsig.random_generator(get_random_bytes);
+//        } else {
+//            params.hsig.copy(G1::zero);
+//        }
+//        for (int i = 0; i != l; i++) {
+//            params.h[i].random_generator(get_random_bytes);
+//        }
+//    }
+
+    void setup(Params& params, MasterKey& msk, int l, bool signatures, void (*get_random_bytes)(void*, size_t)) {
+        bls12_381::PowersOfX alphax;
+        Scalar alpha;
+        random_zpstar(alphax, alpha, get_random_bytes);
+        params.g.random_generator(get_random_bytes);
+        params.g1.multiply_frobenius(params.g, alphax);
+        params.g2.random_generator(get_random_bytes);
+        msk.g2alpha.multiply(params.g2, alpha);
+        params.g3.random_generator(get_random_bytes);
+
+        G1Affine g2affine;
+        G2Affine g1affine;
+        g2affine.from_projective(params.g2);
+        g1affine.from_projective(params.g1);
+        bls12_381::pairing(params.pairing, g2affine, g1affine);
+
+        params.l = l;
+        params.signatures = signatures;
+        if (signatures) {
+            params.hsig.random_generator(get_random_bytes);
+        } else {
+            params.hsig.copy(G1::zero);
+        }
+        for (int i = 0; i != l; i++) {
+            params.h[i].random_generator(get_random_bytes);
+        }
     }
 
     void keygen(SecretKey& sk, const Params& params, const MasterKey& msk, const AttributeList& attrs, void (*get_random_bytes)(void*, size_t)) {
@@ -359,7 +351,7 @@ namespace embedded_pairing::wkdibe {
         }
         sk.a0.multiply(sk.a0, r);
 
-        sk.a0.add(sk.a0, msk.g2alpha1[1]);
+        sk.a0.add(sk.a0, msk.g2alpha);
         sk.a1.multiply_frobenius(params.g, rx);
     }
 

@@ -26,8 +26,8 @@ extern "C" {
     void random_bytes(void* buffer, size_t len);
     uint64_t current_time_nanos(void);
 }
-const int T = 2;
-const int N = 5;
+const int threshold = 7;
+const int totalShares = 11;
 
 // 定义分数结构
 struct Fraction {
@@ -37,7 +37,7 @@ struct Fraction {
 
 };
 
-std::vector<SecretKey> partial_keys;
+
 
 G1 harr[10];
 Params p;
@@ -59,7 +59,6 @@ SecretKey sk2;
 
 FreeSlot b3arr[10];
 SecretKey sk3;
-
 
 
 
@@ -160,6 +159,42 @@ int Generate_Secret(int x[], int y[], int M)
     return ans.num;
 }
 
+// GCD function to calculate greatest common divisor
+int gcd(int a, int b) {
+    while (b != 0) {
+        int temp = b;
+        b = a % b;
+        a = temp;
+    }
+    return a;
+}
+
+// Function to compute Lagrange coefficient for index i
+int computeLagrangeCoefficient(int i, const std::vector<int>& indices, int K) {
+    int numerator = 1;   // Numerator of the Lagrange coefficient
+    int denominator = 1; // Denominator of the Lagrange coefficient
+
+    // We only need to consider the first K points, not the whole indices array
+    for (size_t j = 0; j < K; ++j) {
+        if (i != j) {
+            numerator *= indices[j];                  // Multiply by x_j for the numerator
+            denominator *= (indices[j] - indices[i]); // Multiply by (x_j - x_i) for the denominator
+
+            // Simplify the fraction
+            int gcd_value = gcd(numerator, denominator);
+            numerator /= gcd_value;
+            denominator /= gcd_value;
+        }
+    }
+
+    // If denominator is not 1, throw an exception (shouldn't happen theoretically)
+    if (denominator != 1) {
+        throw std::runtime_error("Error: Denominator should be 1 after simplification");
+    }
+
+    return numerator;
+}
+
 void test_Scalar_threshold(void) {
 //    embedded_pairing::bls12_381::PowersOfX alphax;
 //    Scalar alpha;
@@ -169,107 +204,139 @@ void test_Scalar_threshold(void) {
 //
 //    operation(static_cast<int>(alpha), 4, 2);
 
-//    Scalar scalar;
-//    scalar.std_words[0] = -12345;
-////    scalar.std_words[0] = static_cast<uint32_t>(i);
-//    std::cout << "Value of alpha: " << static_cast<int>(scalar) << std::endl;
+    Scalar scalar;
+    scalar.std_words[0] = -1234567890;
+//    scalar.std_words[0] = static_cast<uint32_t>(i);
+    std::cout << "Value of alpha: " << static_cast<int>(scalar) << std::endl;
     // 实现预计算功能
-    std::vector<int> indices;
-    for (int i = 0; i < N; i++) {
-        indices.push_back(i + 1); // 将 i + 1 添加到集合中
-    }
+    // Initialize indices with values from 1 to 10
+//    std::vector<int> indices;
+//    for (int i = 0; i < 10; ++i) {
+//        indices.push_back(i + 1); // Add i + 1 to the list of indices
+//    }
+
+    // The threshold value (K) is the number of lambdas you want to compute
+//    int K = 6; // For example, compute 6 coefficients
+//    std::vector<int> lambdas(K);
+
+    // Compute the Lagrange coefficients for the first K indices
+//    for (size_t i = 0; i < K; ++i) {
+//        lambdas[i] = computeLagrangeCoefficient(i, indices, K);
+//        std::cout << "Value of lambda[" << i+1 << "]: " << lambdas[i] << std::endl;
+//    }
+
 
 }
-
-void test_wkdibe_encrypt_decrypt(void) {
-    constexpr int num_iterations = 20; // 多次运行的次数
-    MasterKey msk;
-    setup1(p, msk, 10, false, random_bytes, N, T);
-
-    std::cout << "Back Value: " << std::endl;
-
-    for (int i = 0; i < N; ++i) {
-        cout << msk.points[i].first << " "
-             << msk.points[i].second << endl;
-    }
-
-    int* x = new int[T];
-    int* y = new int[T];
-
-    for (int i = 0; i < T; ++i) {
-        x[i] = msk.points[i].first;
-        y[i] = msk.points[i].second;
-    }
-
-    int revert_value = Generate_Secret(x, y, T);
-
-    std::cout << "revert_value: " << revert_value << std::endl;
+//void test_wkdibe_encrypt_decrypt(void) {
+//    constexpr int num_iterations = 20; // 多次运行的次数
+//    MasterKey msk;
 //
-//    for (int i = 0; i < 3; ++i) {
-//        cout << lagrange_coefficients[i] << endl;
+//    auto start2 = std::chrono::high_resolution_clock::now();
+//    ThresholdSetup(p, msk, 10, false, random_bytes, totalShares, threshold);
+//    // 获取结束时间点
+//    auto end2 = std::chrono::high_resolution_clock::now();
+//    // 计算耗时，单位可以是微秒、毫秒或秒
+//    std::chrono::duration<double, std::milli> elapsed2 = end2 - start2;
+//    // 输出运行时间
+//    std::cout << "setup运行时间: " << elapsed2.count() << " 毫秒" << std::endl;
+//
+//    auto start1 = std::chrono::high_resolution_clock::now();
+//    std::vector<SecretKey> derivedPartialKeys(threshold);
+//    for (int i = 0; i < threshold; ++i) {
+//
+//        DelKeyDer(sk1, p, msk.g2AlphaShares[i], attrs2, random_bytes);
+//        derivedPartialKeys[i] = sk1;
 //    }
-//
-//    auto start_time = std::chrono::high_resolution_clock::now();
-//    G1 result = G1::zero; // 初始化为零点
-//    for (int i = 0; i < 3; ++i) {
-//
-//        Scalar scalar;
-//        scalar.std_words[0] = lagrange_coefficients[i];
-//        G1 temp;
-//        temp.multiply(msk.g2alpha1[i], scalar);
-//        result.add(result, temp);
-////        result.add(temp);
-////        msk.g2alpha1[i].multiply(scalar);
-//        G1 new_result;
-//        new_result.add(result, temp); // 使用基类的 add 函数
-//        result = new_result; // 更新 result
-//    }
-//    auto end_time = std::chrono::high_resolution_clock::now();
-//    std::cout << "Setup Time: "
-//              << std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time).count()
-//              << " µs" << std::endl;
+//    // 获取结束时间点
+//    auto end1 = std::chrono::high_resolution_clock::now();
+//    // 计算耗时，单位可以是微秒、毫秒或秒
+//    std::chrono::duration<double, std::milli> elapsed1 = end1 - start1;
+//    // 输出运行时间
+//    std::cout << "DelKeyDer运行时间: " << elapsed1.count() << " 毫秒" << std::endl;
 //
 //
-//    Scalar scalar1;
-//    scalar1.std_words[0] = revert_value;
-//    msk.g2alpha.multiply(p.g2, scalar1);
+//    auto start = std::chrono::high_resolution_clock::now();
 //
-//    if (embedded_pairing::bls12_381::Projective<embedded_pairing::bls12_381::Fq>::equal(result, msk.g2alpha)) {
-//        std::cout << "The results are identical." << std::endl;
+////    DelKeyDer(sk1, p, msk.g2AlphaShares[i], attrs2, random_bytes);
+//    SecretKey reconstructed_key;
+////    Reconstruct( ,p, derivedPartialKeys, attrs2, random_bytes)
+//    reconstructKey(reconstructed_key, p, derivedPartialKeys, threshold, attrs2, random_bytes);
+//
+//    // 计算拉格朗日系数
+////    std::vector<int> indices;
+////    for (int i = 0; i < threshold; ++i) {
+////        indices.push_back(i + 1); // Add i + 1 to the list of indices
+////    }
+////
+////    std::vector<int> lambdas(threshold);
+////    for (size_t i = 0; i < threshold; ++i) {
+//////        计算第i个拉格朗日系数，并将结果存储在 lambdas 数组中
+////        lambdas[i] = computeLagrangeCoefficient(i, indices, threshold);
+////        std::cout << "L_" << (i+1) << "(0) = " << lambdas[i]  << std::endl;
+////    }
+//    // 和a0无关的内容
+////    reconstructed_key.a1 = derivedPartialKeys[0].a1;
+////    reconstructed_key.l = derivedPartialKeys[0].l; // 假设所有部分密钥的长度一致
+////    reconstructed_key.signatures = derivedPartialKeys[0].signatures;
+////    reconstructed_key.bsig = derivedPartialKeys[0].bsig;
+////    reconstructed_key.b = derivedPartialKeys[0].b;
+//
+//    // 开始a0的恢复过程
+////    reconstructed_key.a0.copy(G1::zero);
+//
+//
+//
+//    // 遍历每个部分密钥
+////    for (int i = 0; i < threshold; ++i) {
+////
+////        // 计算 λ_i * partial_a0s[i]
+////        G1 temp;
+////        Scalar scalar;
+////        scalar.std_words[0] = lambdas[i];
+////        temp.multiply(derivedPartialKeys[i].a0, scalar); // temp = λ_i * partial_a0s[i]
+////        // 累加到结果中
+////        #pragma omp critical
+////        {
+////            reconstructed_key.a0.add(reconstructed_key.a0, temp);
+////        }
+////    }
+//
+//    // 获取结束时间点
+//    auto end = std::chrono::high_resolution_clock::now();
+//    // 计算耗时，单位可以是微秒、毫秒或秒
+//    std::chrono::duration<double, std::milli> elapsed = end - start;
+//    // 输出运行时间
+//    std::cout << "Reconstruct运行时间: " << elapsed.count() << " 毫秒" << std::endl;
+//
+//
+//    GT msg;
+//    msg.random(random_bytes);
+//
+//    Ciphertext c;
+//    encrypt(c, msg, p, attrs2, random_bytes);
+//
+//    GT decrypted;
+//    decrypt(decrypted, c, reconstructed_key);
+//
+//    if (GT::equal(msg, decrypted)) {
+//        printf("Decrypt Master: PASS\n");
 //    } else {
-//        std::cout << "The results differ." << std::endl;
+//        printf("Decrypt Master: FAIL (original/decrypted messages differ)\n");
 //    }
-//
-//
-//    keygen1(sk1, p, result, attrs2, random_bytes);
-//    // 恢复密钥，从msk.g2alpha1[i]恢复出来主密钥
+//}
+void test_wkdibe_encrypt_decrypt(void) {
+    MasterKey msk;
+    threshold_setup(p, msk, 10, false, random_bytes, totalShares, threshold);
 
-    for (int i = 0; i < N; ++i) {
-        keygen1(sk1, p, msk.g2alpha1[i], attrs2, random_bytes);
-        partial_keys[i] = sk1;
+    std::vector<SecretKey> derivedPartialKeys(threshold);
+    for (int i = 0; i < threshold; ++i) {
+
+        delegate_key_derive(sk1, p, msk.g2AlphaShares[i], attrs2, random_bytes);
+        derivedPartialKeys[i] = sk1;
     }
 
-    SecretKey reconstructed_key;
-    reconstructed_key.a0.copy(G1::zero);
-
-    reconstructed_key.a1 = partial_keys[0].a1;
-    reconstructed_key.bsig = partial_keys[0].bsig;
-    reconstructed_key.l = partial_keys[0].l; // 假设所有部分密钥的长度一致
-    reconstructed_key.signatures = partial_keys[0].signatures;
-    reconstructed_key.b = partial_keys[0].b;
-
-
-    // 遍历每个部分密钥
-//    for (size_t i = 0; i < indices.size(); ++i) {
-//
-//        // 计算 λ_i * partial_a0s[i]
-//        G1 temp;
-//        temp.multiply(partial_a0s[i], lambda_i); // temp = λ_i * partial_a0s[i]
-//
-//        // 累加到结果中
-//        reconstructed_a0.add(reconstructed_a0, temp);
-//    }
-
+    SecretKey reconstructedKey;
+    reconstruct_key(reconstructedKey, p, derivedPartialKeys, threshold, attrs2, random_bytes);
 
     GT msg;
     msg.random(random_bytes);
@@ -278,12 +345,69 @@ void test_wkdibe_encrypt_decrypt(void) {
     encrypt(c, msg, p, attrs2, random_bytes);
 
     GT decrypted;
-    decrypt(decrypted, c, sk1);
+    decrypt(decrypted, c, reconstructedKey);
 
     if (GT::equal(msg, decrypted)) {
         printf("Decrypt Master: PASS\n");
     } else {
         printf("Decrypt Master: FAIL (original/decrypted messages differ)\n");
+    }
+}
+
+void test_wkdibe_encrypt_decrypt1(void) {
+    using namespace std::chrono; // 简化命名
+
+    MasterKey msk;
+
+    // 统计 setup 的运行时间
+    auto start = high_resolution_clock::now();
+    setup(p, msk, 10, false, random_bytes);
+    auto end = high_resolution_clock::now();
+    printf("setup: %f ms\n", duration<double, std::milli>(end - start).count());
+
+    // 统计 keygen 的运行时间
+    start = high_resolution_clock::now();
+    keygen(sk1, p, msk, attrs1, random_bytes);
+    end = high_resolution_clock::now();
+    printf("keygen: %f ms\n", duration<double, std::milli>(end - start).count());
+
+    // 统计 qualifykey 的运行时间
+    start = high_resolution_clock::now();
+    qualifykey(sk2, p, sk1, attrs2, random_bytes);
+    end = high_resolution_clock::now();
+    printf("qualifykey: %f ms\n", duration<double, std::milli>(end - start).count());
+
+    // 统计 msg.random 的运行时间
+    GT msg;
+    start = high_resolution_clock::now();
+    msg.random(random_bytes);
+    end = high_resolution_clock::now();
+    printf("msg.random: %f ms\n", duration<double, std::milli>(end - start).count());
+
+    // 统计 encrypt 的运行时间
+    Ciphertext c;
+    start = high_resolution_clock::now();
+    encrypt(c, msg, p, attrs2, random_bytes);
+    end = high_resolution_clock::now();
+    printf("encrypt: %f ms\n", duration<double, std::milli>(end - start).count());
+
+    // 统计 decrypt 的运行时间
+    GT decrypted;
+    start = high_resolution_clock::now();
+    decrypt(decrypted, c, sk2);
+    end = high_resolution_clock::now();
+    printf("decrypt: %f ms\n", duration<double, std::milli>(end - start).count());
+
+    // 比较结果
+    start = high_resolution_clock::now();
+    bool is_equal = GT::equal(msg, decrypted);
+    end = high_resolution_clock::now();
+    printf("GT::equal: %f ms\n", duration<double, std::milli>(end - start).count());
+
+    if (is_equal) {
+        printf("QualifyKey: PASS\n");
+    } else {
+        printf("QualifyKey: FAIL (original/decrypted messages differ)\n");
     }
 }
 
@@ -293,18 +417,8 @@ extern "C" {
 
 void run_wkdibe_tests() {
     init_test_wkdibe();
+    test_wkdibe_encrypt_decrypt();
 
-//    test_Scalar_threshold();
-//    test_wkdibe_encrypt_decrypt_master<true>();
-//    test_wkdibe_encrypt_decrypt();
-//    test_wkdibe_qualifykey();
-//    test_wkdibe_qualifykey();
-//    test_wkdibe_nondelegablekey();
-//    test_wkdibe_adjust();
-//    test_wkdibe_sign();
-//    test_wkdibe_marshal<true>("Marshal Compressed");
-//    test_wkdibe_marshal<false>("Marshal Uncompressed");
-//    printf("DONE\n");
 }
 
 

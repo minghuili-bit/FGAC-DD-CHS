@@ -215,9 +215,9 @@ namespace embedded_pairing::wkdibe {
     struct MasterKey {
         G1 g2alpha;
 
-        G1 g2alpha1[5];
+        std::vector<G1> g2AlphaShares; // 动态数组
 
-        std::vector<std::pair<int, int> > points;
+//        std::vector<std::pair<int, int> > points;
 
         template <bool compressed>
         void marshal(void* buffer) const;
@@ -261,8 +261,9 @@ namespace embedded_pairing::wkdibe {
     }
 
     void setup(Params &params, MasterKey &msk, int l, bool signatures, void (*get_random_bytes)(void *, size_t));
-    void setup1(Params &params, MasterKey &msk, int l, bool signatures, void (*get_random_bytes)(void *, size_t), int N, int M);
-    void keygen1(SecretKey& sk, const Params& params, const G1& msk, const AttributeList& attrs, void (*get_random_bytes)(void*, size_t));
+    void threshold_setup(Params &params, MasterKey &msk, int l, bool signatures, void (*get_random_bytes)(void *, size_t), int N, int M);
+    void delegate_key_derive(SecretKey& sk, const Params& params, const G1& msk, const AttributeList& attrs, void (*get_random_bytes)(void*, size_t));
+    void reconstruct_key(SecretKey& reconstructed_key, const Params& params, const std::vector<SecretKey>& derivedPartialKeys, int threshold, const AttributeList& attrs, void (*get_random_bytes)(void*, size_t));
     void keygen(SecretKey& sk, const Params& params, const MasterKey& msk, const AttributeList& attrs, void (*get_random_bytes)(void*, size_t));
     void qualifykey(SecretKey& qualified, const Params& params, const SecretKey& sk, const AttributeList& attrs, void (*get_random_bytes)(void*, size_t));
     void nondelegable_keygen(SecretKey& sk, const Params& params, const MasterKey& msk, const AttributeList& attrs);
