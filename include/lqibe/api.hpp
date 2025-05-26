@@ -132,6 +132,10 @@ namespace embedded_pairing::lqibe {
     void keygen(SecretKey& sk, const MasterKey& msk, const ID& id);
     void encrypt(Ciphertext& ciphertext, void* symmetric, size_t symmetric_length, const Params& params, const ID& id, void (*hash_fill)(void*, size_t, const void*, size_t), void (*get_random_bytes)(void*, size_t));
     void decrypt(void* symmetric, size_t symmetric_length, const Ciphertext& ciphertext, const SecretKey& sk, const ID& id, void (*hash_fill)(void*, size_t, const void*, size_t));
+    void G_function(uint8_t prefix, const uint8_t* input, size_t input_len, uint8_t* output);
+    void derive_key_from_seed(const uint8_t* seed, size_t seed_len, size_t index, uint8_t* out_key, size_t key_len);
+
+
 }
 
 #endif

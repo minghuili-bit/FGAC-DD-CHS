@@ -4,6 +4,7 @@
 extern "C" {
     void run_benchmarks(void);
     void run_wkdibe_tests(void);
+    void run_integration_tests(void);
     void run_bigint_tests(void);
     void run_tests(void);
 }
@@ -15,6 +16,10 @@ int main(int argc, char** argv) {
         }
         if (strcmp(argv[1], "wkdibe") == 0) {
             run_wkdibe_tests();
+            return 0;
+        }
+        if (strcmp(argv[1], "integration") == 0) {
+            run_integration_tests();
             return 0;
         }
         printf("Invalid command\n");

@@ -41,6 +41,11 @@
 #include "bls12_381/wnaf.hpp"
 #include "bls12_381/decomposition.hpp"
 #include "../../include/wkdibe/api.hpp"
+#include <openssl/sha.h>
+#include <openssl/evp.h>
+#include <openssl/rand.h>
+#include <cstring>
+#include <stdexcept>
 
 using namespace std;
 
@@ -97,14 +102,14 @@ namespace embedded_pairing::wkdibe {
         // Initialize group generator g2
         params.g2.random_generator(get_random_bytes);
 
-        std::cout << "Value of alpha: " << static_cast<int>(alpha) << std::endl;
+//        std::cout << "Value of alpha: " << static_cast<int>(alpha) << std::endl;
 
         // Split alpha via Shamir sharing into shares
         std::vector<Scalar> shares(totalShares);
         secret_sharing(static_cast<int>(alpha), totalShares, threshold, shares);
 
-        cout << "Secret is divided to " << totalShares
-             << " Parts - " << endl;
+//        cout << "Secret is divided to " << totalShares
+//             << " Parts - " << endl;
 
         msk.g2AlphaShares.resize(totalShares);
         // Compute and store g_2^shares[i]
@@ -112,7 +117,7 @@ namespace embedded_pairing::wkdibe {
 //            auto mark = Scalar{.std_words = {(uint32_t)shares[i].first}};
 //            auto secret = Scalar{.std_words = {(uint32_t)shares[i]}};
 //            std::cout << "Value of i: " << static_cast<int>(mark) << std::endl;
-            std::cout << "Value of alpha: " << static_cast<int>(shares[i]) << std::endl;
+//            std::cout << "Value of alpha: " << static_cast<int>(shares[i]) << std::endl;
             msk.g2AlphaShares[i].multiply(params.g2, shares[i]);
         }
 
@@ -235,10 +240,6 @@ namespace embedded_pairing::wkdibe {
         derivedPartialKey.a1.multiply_frobenius(params.g, rx);
     }
 
-//    传入参数：
-//    传出参数：
-//    reconstructKey(reconstructed_key, p, derivedPartialKeys, threshold, attrs2, random_bytes);
-
     void reconstruct_key(SecretKey& reconstructedKey, const Params& params, const std::vector<SecretKey>& derivedPartialKeys, int threshold, const AttributeList& attrs, void (*get_random_bytes)(void*, size_t)) {
 
         reconstructedKey.a0.copy(G1::zero);
@@ -265,33 +266,6 @@ namespace embedded_pairing::wkdibe {
 
     }
 
-//    void setup(Params& params, MasterKey& msk, int l, bool signatures, void (*get_random_bytes)(void*, size_t)) {
-//        bls12_381::PowersOfX alphax;
-//        Scalar alpha;
-//        random_zpstar(alphax, alpha, get_random_bytes);
-//        params.g.random_generator(get_random_bytes);
-//        params.g1.multiply_frobenius(params.g, alphax);
-//        params.g2.random_generator(get_random_bytes);
-//        msk.g2alpha.multiply(params.g2, alpha);
-//        params.g3.random_generator(get_random_bytes);
-//
-//        G1Affine g2affine;
-//        G2Affine g1affine;
-//        g2affine.from_projective(params.g2);
-//        g1affine.from_projective(params.g1);
-//        bls12_381::pairing(params.pairing, g2affine, g1affine);
-//
-//        params.l = l;
-//        params.signatures = signatures;
-//        if (signatures) {
-//            params.hsig.random_generator(get_random_bytes);
-//        } else {
-//            params.hsig.copy(G1::zero);
-//        }
-//        for (int i = 0; i != l; i++) {
-//            params.h[i].random_generator(get_random_bytes);
-//        }
-//    }
 
     void setup(Params& params, MasterKey& msk, int l, bool signatures, void (*get_random_bytes)(void*, size_t)) {
         bls12_381::PowersOfX alphax;
@@ -728,4 +702,239 @@ namespace embedded_pairing::wkdibe {
 
         return GT::equal(ratio, params.pairing);
     }
+
+    std::vector<std::vector<uint8_t>> KeyDerivationTree::generate_keys(const uint8_t* seed, size_t seed_len, size_t num_keys, size_t key_len) {
+        std::vector<std::vector<uint8_t>> keys;
+        std::vector<uint8_t> current(seed, seed + seed_len);
+
+        for (size_t i = 0; i < num_keys; ++i) {
+            std::vector<uint8_t> key(key_len);
+            for (size_t j = 0; j < key_len; ++j) {
+                key[j] = current[j % current.size()] ^ static_cast<uint8_t>(i + j);
+            }
+            keys.push_back(key);
+            current = key;
+        }
+        return keys;
+    }
+
+    size_t SymmetricCipher::encrypt(uint8_t* out, const uint8_t* data, size_t len, const uint8_t* key, size_t key_len) {
+        if (key_len != 32) {
+            throw std::runtime_error("SymmetricCipher::encrypt: key must be 32 bytes for AES-256");
+        }
+
+        EVP_CIPHER_CTX* ctx = EVP_CIPHER_CTX_new();
+        if (!ctx) throw std::runtime_error("Failed to create EVP_CIPHER_CTX");
+
+        uint8_t iv[16];
+        if (!RAND_bytes(iv, sizeof(iv))) throw std::runtime_error("Failed to generate IV");
+        memcpy(out, iv, sizeof(iv));
+
+        int out_len1 = 0, out_len2 = 0;
+        if (!EVP_EncryptInit_ex(ctx, EVP_aes_256_cbc(), nullptr, key, iv))
+            throw std::runtime_error("EncryptInit failed");
+
+        if (!EVP_EncryptUpdate(ctx, out + 16, &out_len1, data, len))
+            throw std::runtime_error("EncryptUpdate failed");
+
+        if (!EVP_EncryptFinal_ex(ctx, out + 16 + out_len1, &out_len2))
+            throw std::runtime_error("EncryptFinal failed");
+
+        EVP_CIPHER_CTX_free(ctx);
+        return 16 + out_len1 + out_len2;
+    }
+
+    size_t SymmetricCipher::decrypt(uint8_t* out, const uint8_t* ciphertext, size_t len, const uint8_t* key, size_t key_len) {
+        if (key_len != 32 || len < 16)
+            throw std::runtime_error("SymmetricCipher::decrypt: invalid input");
+
+        const uint8_t* iv = ciphertext;
+        const uint8_t* enc = ciphertext + 16;
+        int enc_len = len - 16;
+
+        EVP_CIPHER_CTX* ctx = EVP_CIPHER_CTX_new();
+        if (!ctx) throw std::runtime_error("Failed to create EVP_CIPHER_CTX");
+
+        int out_len1 = 0, out_len2 = 0;
+        if (!EVP_DecryptInit_ex(ctx, EVP_aes_256_cbc(), nullptr, key, iv))
+            throw std::runtime_error("DecryptInit failed");
+
+        if (!EVP_DecryptUpdate(ctx, out, &out_len1, enc, enc_len))
+            throw std::runtime_error("DecryptUpdate failed");
+
+        if (!EVP_DecryptFinal_ex(ctx, out + out_len1, &out_len2))
+            throw std::runtime_error("DecryptFinal failed");
+
+        EVP_CIPHER_CTX_free(ctx);
+        return out_len1 + out_len2;
+    }
+
+    static void write_uint32(std::vector<uint8_t>& out, uint32_t val) {
+        for (int i = 3; i >= 0; --i)
+            out.push_back((val >> (i * 8)) & 0xFF);
+    }
+
+    static uint32_t read_uint32(const uint8_t*& ptr) {
+        uint32_t val = 0;
+        for (int i = 0; i < 4; ++i)
+            val = (val << 8) | *ptr++;
+        return val;
+    }
+
+    static void write_uint64(std::vector<uint8_t>& out, uint64_t val) {
+        for (int i = 7; i >= 0; --i)
+            out.push_back((val >> (i * 8)) & 0xFF);
+    }
+
+    static uint64_t read_uint64(const uint8_t*& ptr) {
+        uint64_t val = 0;
+        for (int i = 0; i < 8; ++i)
+            val = (val << 8) | *ptr++;
+        return val;
+    }
+
+    static void write_bytes(std::vector<uint8_t>& out, const std::vector<uint8_t>& data) {
+        write_uint32(out, data.size());
+        out.insert(out.end(), data.begin(), data.end());
+    }
+
+    static std::vector<uint8_t> read_bytes(const uint8_t*& ptr) {
+        uint32_t len = read_uint32(ptr);
+        return std::vector<uint8_t>(ptr, ptr + len);
+        ptr += len;
+    }
+
+    std::vector<uint8_t> TokenEncryptor::serialize(const Token& t) {
+        std::vector<uint8_t> out;
+
+        auto append_u32 = [&](uint32_t val) {
+            for (int i = 3; i >= 0; --i)
+                out.push_back((val >> (i * 8)) & 0xFF);
+        };
+        auto append_u64 = [&](uint64_t val) {
+            for (int i = 7; i >= 0; --i)
+                out.push_back((val >> (i * 8)) & 0xFF);
+        };
+        auto append_vec = [&](const std::vector<uint8_t>& v) {
+            append_u32(v.size());
+            out.insert(out.end(), v.begin(), v.end());
+        };
+        auto append_str = [&](const std::string& s) {
+            append_u32(s.size());
+            out.insert(out.end(), s.begin(), s.end());
+        };
+
+        append_u32(t.id);
+        append_str(t.prg);
+        append_str(t.uid);
+        append_u32(t.height);
+        append_u32(t.offset);
+        append_vec(t.seed);
+        append_u64(t.gen_time);
+        append_u64(t.exp_time);
+        append_vec(t.auth);
+        return out;
+    }
+
+    Token TokenEncryptor::deserialize(const std::vector<uint8_t>& buffer) {
+        Token t;
+        const uint8_t* ptr = buffer.data();
+        const uint8_t* end = buffer.data() + buffer.size();
+
+        auto read_u32 = [&]() -> uint32_t {
+            if (end - ptr < 4) throw std::runtime_error("deserialize: not enough bytes for u32");
+            uint32_t val = 0;
+            for (int i = 0; i < 4; ++i) val = (val << 8) | *ptr++;
+            return val;
+        };
+        auto read_u64 = [&]() -> uint64_t {
+            if (end - ptr < 8) throw std::runtime_error("deserialize: not enough bytes for u64");
+            uint64_t val = 0;
+            for (int i = 0; i < 8; ++i) val = (val << 8) | *ptr++;
+            return val;
+        };
+        auto read_bytes = [&](std::vector<uint8_t>& v) {
+            uint32_t len = read_u32();
+            if (end - ptr < len) throw std::runtime_error("deserialize: byte vector out of bounds");
+            v.assign(ptr, ptr + len);
+            ptr += len;
+        };
+        auto read_string = [&](std::string& s) {
+            uint32_t len = read_u32();
+            if (end - ptr < len) throw std::runtime_error("deserialize: string out of bounds");
+            s.assign((const char*)ptr, len);
+            ptr += len;
+        };
+
+        t.id = read_u32();
+        read_string(t.prg);
+        read_string(t.uid);
+        t.height = read_u32();
+        t.offset = read_u32();
+        read_bytes(t.seed);
+        t.gen_time = read_u64();
+        t.exp_time = read_u64();
+        read_bytes(t.auth);
+        uint32_t prg_len = read_u32();
+        printf("[debug] deserialize: prg_len = %u, remaining = %ld\n", prg_len, end - ptr);
+        return t;
+    }
+
+
+    static void hash_to_gt(const uint8_t* key, size_t key_len, GT& out_gt) {
+        uint8_t buffer[384] = {0};
+        uint8_t hash[SHA256_DIGEST_LENGTH];
+
+        SHA256(key, key_len, hash);
+        memcpy(buffer, hash, std::min(sizeof(buffer), sizeof(hash)));
+
+        out_gt.read_big_endian(buffer);
+    }
+
+    void default_hash_gt_to_key(uint8_t* out_key, size_t key_len, const GT& gt) {
+        uint8_t buffer[384];
+        gt.write_big_endian(buffer);
+
+        uint8_t hash[SHA256_DIGEST_LENGTH];
+        SHA256(buffer, sizeof(buffer), hash);
+
+        memcpy(out_key, hash, key_len);
+    }
+
+    void TokenEncryptor::encrypt_token(Ciphertext& out_ct,
+                                       std::vector<uint8_t>& out_sym_cipher,
+                                       const Token& token,
+                                       const Params& p,
+                                       const AttributeList& attrs,
+                                       void (*random_bytes)(void*, size_t)) {
+        uint8_t sym_key[32];
+        random_bytes(sym_key, sizeof(sym_key));
+
+        std::vector<uint8_t> plaintext = serialize(token);
+        out_sym_cipher.resize(plaintext.size());
+        SymmetricCipher::encrypt(out_sym_cipher.data(), plaintext.data(), plaintext.size(), sym_key, sizeof(sym_key));
+
+        GT gt_key;
+        hash_to_gt(sym_key, sizeof(sym_key), gt_key);  // 对称 hash 生成 GT
+
+        encrypt(out_ct, gt_key, p, attrs, random_bytes);
+    }
+
+    Token TokenEncryptor::decrypt_token(const Ciphertext& ct,
+                                        const std::vector<uint8_t>& sym_cipher,
+                                        const SecretKey& sk) {
+
+        GT gt_key;
+        decrypt(gt_key, ct, sk);
+
+        uint8_t sym_key[32];
+        default_hash_gt_to_key(sym_key, sizeof(sym_key), gt_key);
+
+        std::vector<uint8_t> decrypted(sym_cipher.size());
+        SymmetricCipher::decrypt(decrypted.data(), sym_cipher.data(), sym_cipher.size(), sym_key, sizeof(sym_key));
+
+        return deserialize(decrypted);
+    }
+
+
 }

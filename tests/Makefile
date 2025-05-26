@@ -47,11 +47,11 @@ PAIRING_OBJECTS = $(addprefix $(BINDIR)/,$(CPP_SOURCES:.cpp=.o)) $(addprefix $(B
 
 all: test pairing.a
 
-pairing.a: $(PAIRING_OBJECTS) $(BINDIR)/bench_bls12_381.o $(BINDIR)/test_bls12_381.o $(BINDIR)/test_wkdibe.o
+pairing.a: $(PAIRING_OBJECTS) $(BINDIR)/bench_bls12_381.o $(BINDIR)/test_bls12_381.o $(BINDIR)/test_wkdibe.o $(BINDIR)/test_integration.o
 	$(AR) rcs pairing.a $+
 
-test: $(PAIRING_OBJECTS) $(BINDIR)/test.o $(BINDIR)/platform_utils.o $(BINDIR)/test_bls12_381.o $(BINDIR)/test_wkdibe.o $(BINDIR)/bench_bls12_381.o
-	$(CXX) $(CXXFLAGS) $(LDFLAGS) $+ -o test
+test: $(PAIRING_OBJECTS) $(BINDIR)/test.o $(BINDIR)/platform_utils.o $(BINDIR)/test_bls12_381.o $(BINDIR)/test_wkdibe.o $(BINDIR)/bench_bls12_381.o $(BINDIR)/test_integration.o
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) $+ -o test -lcrypto
 
 $(BINDIR)/%.o: %.cpp
 	mkdir -p $(dir $@)

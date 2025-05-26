@@ -45,6 +45,8 @@
 #include "bls12_381/decomposition.hpp"
 
 namespace embedded_pairing::wkdibe {
+
+
     typedef bls12_381::G1 G1;
     typedef bls12_381::G2 G2;
     typedef bls12_381::G1Affine G1Affine;
@@ -54,6 +56,7 @@ namespace embedded_pairing::wkdibe {
     typedef core::BigInt<256> Scalar;
 
     const core::BigInt<256> group_order = bls12_381::Fr::p_value;
+
 
     struct Attribute {
         ID id;
@@ -233,6 +236,18 @@ namespace embedded_pairing::wkdibe {
         G1 prodexp;
     };
 
+    struct Token {
+        uint32_t id;
+        std::string prg;
+        std::string uid;
+        uint32_t height;
+        uint32_t offset;
+        std::vector<uint8_t> seed;
+        uint64_t gen_time;
+        uint64_t exp_time;
+        std::vector<uint8_t> auth;
+    };
+
     inline void scalar_hash_reduce(Scalar& x) {
         bls12_381::Fr* target = reinterpret_cast<bls12_381::Fr*>(&x);
         target->hash_reduce();
@@ -260,6 +275,34 @@ namespace embedded_pairing::wkdibe {
         gt.random_gt(s, bls12_381::generator_pairing, get_random_bytes);
     }
 
+    class KeyDerivationTree {
+    public:
+        static std::vector<std::vector<uint8_t>> generate_keys(const uint8_t* seed, size_t seed_len, size_t num_keys, size_t key_len);
+    };
+
+    class SymmetricCipher {
+    public:
+        static size_t encrypt(uint8_t* out, const uint8_t* data, size_t len, const uint8_t* key, size_t key_len);
+        static size_t decrypt(uint8_t* out, const uint8_t* ciphertext, size_t len, const uint8_t* key, size_t key_len);
+    };
+
+    class TokenEncryptor {
+    public:
+        static std::vector <uint8_t> serialize(const Token &token);
+
+        static Token deserialize(const std::vector <uint8_t> &buffer);
+
+        static void encrypt_token(Ciphertext &out_ct,
+                                  std::vector <uint8_t> &out_sym_cipher,
+                                  const Token &token,
+                                  const Params &p,
+                                  const AttributeList &attrs,
+                                  void (*random_bytes)(void *, size_t));
+
+        static Token decrypt_token(const Ciphertext& ct,
+                                   const std::vector<uint8_t>& sym_cipher,
+                                   const SecretKey& sk);
+    };
     void setup(Params &params, MasterKey &msk, int l, bool signatures, void (*get_random_bytes)(void *, size_t));
     void threshold_setup(Params &params, MasterKey &msk, int l, bool signatures, void (*get_random_bytes)(void *, size_t), int N, int M);
     void delegate_key_derive(SecretKey& sk, const Params& params, const G1& msk, const AttributeList& attrs, void (*get_random_bytes)(void*, size_t));
@@ -283,6 +326,12 @@ namespace embedded_pairing::wkdibe {
     void sign_precomputed(Signature& signature, const Params& params, const SecretKey& sk, const AttributeList* attrs, const Precomputed& precomputed, const Scalar& message, void (*get_random_bytes)(void*, size_t));
     bool verify(const Params& params, const AttributeList& attrs, const Signature& signature, const Scalar& message);
     bool verify_precomputed(const Params& params, const Precomputed& precomputed, const Signature& signature, const Scalar& message);
-}
+//    std::vector<std::vector<uint8_t>> KeyDerivationTree::generate_keys(const uint8_t* seed, size_t seed_len, size_t num_keys, size_t key_len)
+//    void SymmetricCipher::encrypt(uint8_t* out, const uint8_t* data, size_t len, const uint8_t* key, size_t key_len)
+//    void SymmetricCipher::decrypt(uint8_t* out, const uint8_t* ciphertext, size_t len, const uint8_t* key, size_t key_len)
+
+
+
+    }
 
 #endif

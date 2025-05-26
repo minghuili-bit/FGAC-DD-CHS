@@ -8,10 +8,8 @@ For reference, the original JEDI project README is available [here](https://gith
 
 ### 1. Platform Compatibility
 
-- The original project was designed for **Linux** systems; we adapted the build configuration and assembly code to enable compilation and execution on **macOS**
+The original project was designed for **Linux** systems; we adapted the build configuration and assembly code to enable compilation and execution on **macOS**
 
-- Modified `.s` files in `src/core/arch/x86_64/` to comply with macOS assembly syntax, such as replacing:
+### 2. Code Modifications
 
-  ```asm
-  .globl my_function         →  .globl _my_function
-  my_function:               →  _my_function:
+We extended the core WKD-IBE logic based on the original research implementation. The modifications were primarily made to the following files: /include/wkdibe/api.hpp, /src/wkdibe/api.cpp, and tests/test_integration.cpp.
